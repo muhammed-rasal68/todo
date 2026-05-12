@@ -177,6 +177,31 @@ function loadTheme(){
 
 }
 
+
+
 if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("/service-worker.js");
 }
+
+let deferredPrompt;
+
+window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault();
+
+    deferredPrompt = e;
+
+    document.querySelector(".install-btn").style.display = "block";
+});
+
+document.querySelector(".install-btn").addEventListener("click", async () => {
+
+    if (!deferredPrompt) return;
+
+    deferredPrompt.prompt();
+
+    const result = await deferredPrompt.userChoice;
+
+    console.log(result.outcome);
+
+    deferredPrompt = null;
+});

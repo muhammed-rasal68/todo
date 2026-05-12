@@ -147,3 +147,6 @@ body:has(#theme:checked) input::placeholder{
     }
 
 }
+.install-btn{
+    display:none;
+}
