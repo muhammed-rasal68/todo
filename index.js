@@ -205,3 +205,10 @@ document.querySelector(".install-btn").addEventListener("click", async () => {
 
     deferredPrompt = null;
 });
+setTimeout(() => {
+
+    document.querySelector(".install-btn").style.opacity = "1";
+
+    document.querySelector(".install-btn").style.pointerEvents = "auto";
+
+}, 1000);

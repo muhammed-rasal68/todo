@@ -148,5 +148,28 @@ body:has(#theme:checked) input::placeholder{
 
 }
 .install-btn{
-    display:none;
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    
+    background: #7c3aed;
+    color: white;
+
+    padding: 14px 24px;
+
+    border: none;
+    border-radius: 14px;
+
+    font-size: 16px;
+    font-weight: bold;
+
+    cursor: pointer;
+
+    box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+
+    opacity: 0;
+    pointer-events: none;
+
+    transition: 0.3s;
 }
