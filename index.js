@@ -205,10 +205,16 @@ document.querySelector(".install-btn").addEventListener("click", async () => {
 
     deferredPrompt = null;
 });
-setTimeout(() => {
+const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
 
-    document.querySelector(".install-btn").style.opacity = "1";
+if (!isStandalone) {
 
-    document.querySelector(".install-btn").style.pointerEvents = "auto";
+    setTimeout(() => {
 
-}, 1000);
+        document.querySelector(".install-btn").style.opacity = "1";
+
+        document.querySelector(".install-btn").style.pointerEvents = "auto";
+
+    }, 1000);
+
+}
