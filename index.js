@@ -201,6 +201,12 @@ window.addEventListener("beforeinstallprompt", (e) => {
 
 document.querySelector(".install-btn").addEventListener("click", async () => {
 
+    if (isStandalone) {
+        // PWA is already installed, open in app
+        window.location.href = window.location.href;
+        return;
+    }
+
     if (!deferredPrompt) return;
 
     deferredPrompt.prompt();
