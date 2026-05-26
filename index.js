@@ -4,6 +4,12 @@ const icon = document.getElementById("icon");
 const input = document.querySelector(".todo-input input");
 const addBtn = document.querySelector(".add-btn");
 
+
+addBtn.style.opacity = input.value.trim() ? "1.0" : "0.5";
+input.addEventListener("input", () => {
+    addBtn.style.opacity = input.value.trim() ? "1.0" : "0.5";
+});
+
 const todoList = document.querySelector(".todo ul");
 const completedList = document.querySelector(".finished ul");
 
