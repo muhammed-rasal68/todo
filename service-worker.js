@@ -4,57 +4,92 @@ const OFFLINE_URL = '/offline.html';
 const urlsToCache = [
   '/',
   '/index.html',
+  '/index.js',
   '/style.css',
-  '/script.js',
   '/manifest.json',
-  '/images/favicon.png',
-  '/images/icon-192.png',
-  '/images/icon-512.png',
-  OFFLINE_URL
+  '/offline.html',
+  '/images/blue-add.svg',
+  '/images/delete.svg',
+  '/images/deleteW.svg',
+  '/images/circle.svg',
+  '/images/tick.svg',
+  '/images/black.svg',
+  '/images/white.ico',
+  '/images/favicon.ico',
+  '/images/favicon-32x32.png',
+  '/images/favicon-16x16.png',
+  '/images/android-chrome-192x192.png',
+  '/images/android-chrome-512x512.png',
+  '/images/apple-touch-icon.png',
 ];
 
-// Install: cache app shell and offline page
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache))
+    caches.open(CACHE_NAME)
+      .then(cache => cache.addAll(urlsToCache))
       .then(() => self.skipWaiting())
+      .catch(err => console.log('Cache install failed:', err))
   );
 });
 
-// Activate: remove old caches
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys => Promise.all(
       keys.map(key => {
         if (key !== CACHE_NAME) return caches.delete(key);
       })
-    ))).then(() => self.clients.claim())
+    )).then(() => self.clients.claim())
   );
 });
 
-// Fetch: respond with cache, network, or offline page for navigations
 self.addEventListener('fetch', event => {
   const request = event.request;
 
-  // For navigation requests, serve offline page when both cache and network fail
   if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(request).then(response => {
-        // Optionally update the cache with the latest navigation response
-        const copy = response.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(request, copy));
-        return response;
-      }).catch(() => caches.match(OFFLINE_URL))
+      fetch(request)
+        .then(response => {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(request, copy));
+          return response;
+        })
+        .catch(() => caches.match(OFFLINE_URL))
     );
     return;
   }
 
-  // For other requests, try cache first then network
   event.respondWith(
-    caches.match(request).then(cached => cached || fetch(request).catch(() => {
-      // If request is for an image, optionally return a fallback image
-      if (request.destination === 'image') return caches.match('/images/favicon.png');
-      return caches.match(OFFLINE_URL);
-    }))
+    caches.match(request).then(cached => {
+      if (cached) return cached;
+      return fetch(request)
+        .then(response => {
+          if (response.ok) {
+            const copy = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(request, copy));
+          }
+          return response;
+        })
+        .catch(() => {
+          if (request.destination === 'image') return caches.match('/images/favicon-32x32.png');
+          return caches.match(OFFLINE_URL);
+        });
+    })
   );
+});
+
+self.addEventListener('sync', event => {
+  if (event.tag === 'sync-tasks') {
+    event.waitUntil(syncTasks());
+  }
+});
+
+async function syncTasks() {
+  const clients = await self.clients.matchAll();
+  clients.forEach(client => client.postMessage({ type: 'SYNC_COMPLETE' }));
+}
+
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });

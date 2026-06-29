@@ -4,7 +4,6 @@ const icon = document.getElementById("icon");
 const input = document.querySelector(".todo-input input");
 const addBtn = document.querySelector(".add-btn");
 
-
 addBtn.style.opacity = input.value.trim() ? "1.0" : "0.5";
 input.addEventListener("input", () => {
     addBtn.style.opacity = input.value.trim() ? "1.0" : "0.5";
@@ -17,45 +16,32 @@ loadTasks();
 loadTheme();
 
 theme.addEventListener("change", () => {
-
-    if(theme.checked){
-
+    if (theme.checked) {
         icon.src = "images/white.ico";
-
         document.querySelectorAll(".delete").forEach((btn) => {
             btn.src = "images/deleteW.svg";
         });
-
         localStorage.setItem("theme", "dark");
-
     } else {
-
         icon.src = "images/black.svg";
-
         document.querySelectorAll(".delete").forEach((btn) => {
             btn.src = "images/delete.svg";
         });
-
         localStorage.setItem("theme", "light");
-
     }
-
 });
 
-function createTask(text, completed = false){
-
+function createTask(text, completed = false) {
     const li = document.createElement("li");
-
     li.innerHTML = `
         <div class="task">
             <img class="check" src="${completed ? "images/tick.svg" : "images/circle.svg"}" width="18" height="18" alt="">
             <p>${text}</p>
         </div>
-
         <img class="delete" src="${theme.checked ? "images/deleteW.svg" : "images/delete.svg"}" width="20" height="20" alt="">
     `;
 
-    if(completed){
+    if (completed) {
         li.classList.add("completed");
         completedList.appendChild(li);
     } else {
@@ -66,167 +52,138 @@ function createTask(text, completed = false){
     const deleteBtn = li.querySelector(".delete");
 
     checkBtn.addEventListener("click", () => {
-
-        if(li.classList.contains("completed")){
-
+        if (li.classList.contains("completed")) {
             li.classList.remove("completed");
-
             checkBtn.src = "images/circle.svg";
-
             todoList.appendChild(li);
-
         } else {
-
             li.classList.add("completed");
-
             checkBtn.src = "images/tick.svg";
-
             completedList.appendChild(li);
-
         }
-
         saveTasks();
-
     });
 
     deleteBtn.addEventListener("click", () => {
-
         li.remove();
-
         saveTasks();
-
     });
 
     saveTasks();
-
 }
 
 addBtn.addEventListener("click", () => {
-
     const text = input.value.trim();
-
-    if(text === ""){
-        return;
-    }
-
+    if (text === "") return;
     createTask(text);
-
     input.value = "";
-
 });
 
 input.addEventListener("keydown", (e) => {
-
-    if(e.key === "Enter"){
-
+    if (e.key === "Enter") {
         const text = input.value.trim();
-
-        if(text === ""){
-            return;
-        }
-
+        if (text === "") return;
         createTask(text);
-
         input.value = "";
-
     }
-
 });
 
-function saveTasks(){
-
+function saveTasks() {
     const tasks = [];
-
     document.querySelectorAll(".todo li, .finished li").forEach((li) => {
-
         tasks.push({
             text: li.querySelector("p").textContent,
             completed: li.classList.contains("completed")
         });
-
     });
-
     localStorage.setItem("tasks", JSON.stringify(tasks));
-
+    registerSync();
 }
 
-function loadTasks(){
-
+function loadTasks() {
     const savedTasks = JSON.parse(localStorage.getItem("tasks")) || [];
-
     todoList.innerHTML = "";
     completedList.innerHTML = "";
-
     savedTasks.forEach((task) => {
         createTask(task.text, task.completed);
     });
-
 }
 
-function loadTheme(){
-
+function loadTheme() {
     const savedTheme = localStorage.getItem("theme");
-
-    if(savedTheme === "dark"){
-
+    if (savedTheme === "dark") {
         theme.checked = true;
-
         icon.src = "images/white.ico";
-
     } else {
-
         theme.checked = false;
-
         icon.src = "images/black.svg";
-
     }
-
 }
-
-
 
 if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("/service-worker.js");
+    navigator.serviceWorker.register("/service-worker.js").then(reg => {
+        if (navigator.serviceWorker.controller) {
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                window.location.reload();
+            });
+        }
+    });
 }
 
 let deferredPrompt;
-
 window.addEventListener("beforeinstallprompt", (e) => {
     e.preventDefault();
-
     deferredPrompt = e;
-
     document.querySelector(".install-btn").style.display = "block";
 });
 
 document.querySelector(".install-btn").addEventListener("click", async () => {
-
     if (isStandalone) {
-        // PWA is already installed, open in app
         window.location.href = window.location.href;
         return;
     }
-
     if (!deferredPrompt) return;
-
     deferredPrompt.prompt();
-
     const result = await deferredPrompt.userChoice;
-
     console.log(result.outcome);
-
     deferredPrompt = null;
 });
+
 const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
 
 if (!isStandalone) {
-
     setTimeout(() => {
-
         document.querySelector(".install-btn").style.opacity = "1";
-
         document.querySelector(".install-btn").style.pointerEvents = "auto";
-
     }, 1000);
+}
 
+window.addEventListener('online', () => {
+    document.body.classList.remove('offline');
+    registerSync();
+});
+
+window.addEventListener('offline', () => {
+    document.body.classList.add('offline');
+});
+
+navigator.serviceWorker.addEventListener('message', event => {
+    if (event.data && event.data.type === 'SYNC_COMPLETE') {
+        console.log('Background sync completed');
+    }
+});
+
+async function registerSync() {
+    if ('serviceWorker' in navigator && 'SyncManager' in window) {
+        try {
+            const reg = await navigator.serviceWorker.ready;
+            await reg.sync.register('sync-tasks');
+        } catch (err) {
+            console.log('Background sync not supported:', err);
+        }
+    }
+}
+
+if (!navigator.onLine) {
+    document.body.classList.add('offline');
 }

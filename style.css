@@ -174,3 +174,33 @@ body:has(#theme:checked) input::placeholder{
 
     transition: 0.3s;
 }
+
+.offline-indicator {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background: #ff6b6b;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: bold;
+    z-index: 1000;
+    opacity: 0;
+    transform: translateY(-20px);
+    transition: 0.3s;
+}
+
+body.offline .offline-indicator {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+@media(max-width:480px){
+    .offline-indicator {
+        top: 10px;
+        right: 10px;
+        left: 10px;
+        text-align: center;
+    }
+}
